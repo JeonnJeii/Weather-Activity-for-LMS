@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Philippine Climate Simulator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .draggable { cursor: move; }
+    </style>
+</head>
+<body>
+    <div id="climate-simulator" class="p-4 bg-gray-100 rounded-lg">
+        <h2 class="text-2xl font-bold mb-4">Philippine Climate Simulator</h2>
+        <div class="flex flex-col md:flex-row gap-4 mb-4">
+            <div id="weather-conditions" class="bg-white p-4 rounded-md flex-1">
+                <h3 class="font-semibold mb-2">Weather Conditions</h3>
+                <!-- Weather conditions will be populated here -->
+            </div>
+            <div id="wet-season" class="bg-white p-4 rounded-md flex-1">
+                <h3 class="font-semibold mb-2">Wet Season (June to November)</h3>
+                <!-- Wet season items will be populated here -->
+            </div>
+            <div id="dry-season" class="bg-white p-4 rounded-md flex-1">
+                <h3 class="font-semibold mb-2">Dry Season (December to May)</h3>
+                <!-- Dry season items will be populated here -->
+            </div>
+        </div>
+        <div class="flex gap-4 mt-4">
+            <button id="check-answers" class="bg-blue-500 text-white px-4 py-2 rounded">
+                Check Answers
+            </button>
+            <button id="reset-simulator" class="bg-gray-500 text-white px-4 py-2 rounded">
+                Reset
+            </button>
+        </div>
+        <div id="feedback" class="mt-4 hidden">
+            <div class="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4" role="alert">
+                <p class="font-bold">Feedback</p>
+                <p id="feedback-text"></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const weatherConditions = [
+            { id: 'rain', content: 'Heavy Rainfall', season: 'wet' },
+            { id: 'humidity', content: 'High Humidity', season: 'wet' },
+            { id: 'typhoon', content: 'Typhoons', season: 'wet' },
+            { id: 'sunny', content: 'Sunny Days', season: 'dry' },
+            { id: 'cool', content: 'Cool Temperatures', season: 'dry' },
+            { id: 'breeze', content: 'Northeast Monsoon', season: 'dry' }
+        ];
+
+        let items = [...weatherConditions];
+        let wetSeason = [];
+        let drySeason = [];
+
+        function createDraggableItem(item) {
+            const div = document.createElement('div');
+            div.className = 'bg-blue-100 p-2 mb-2 rounded draggable';
+            div.textContent = item.content;
+            div.draggable = true;
+            div.id = item.id;
+            div.addEventListener('dragstart', (e) => {
+                e.dataTransfer.setData('text/plain', item.id);
+            });
+            return div;
+        }
+
+        function renderItems() {
+            const weatherConditionsEl = document.getElementById('weather-conditions');
+            const wetSeasonEl = document.getElementById('wet-season');
+            const drySeasonEl = document.getElementById('dry-season');
+
+            weatherConditionsEl.innerHTML = '<h3 class="font-semibold mb-2">Weather Conditions</h3>';
+            wetSeasonEl.innerHTML = '<h3 class="font-semibold mb-2">Wet Season (June to November)</h3>';
+            drySeasonEl.innerHTML = '<h3 class="font-semibold mb-2">Dry Season (December to May)</h3>';
+
+            items.forEach(item => weatherConditionsEl.appendChild(createDraggableItem(item)));
+            wetSeason.forEach(item => wetSeasonEl.appendChild(createDraggableItem(item)));
+            drySeason.forEach(item => drySeasonEl.appendChild(createDraggableItem(item)));
+        }
+
+        function setupDropZone(elementId, season) {
+            const element = document.getElementById(elementId);
+            element.addEventListener('dragover', (e) => e.preventDefault());
+            element.addEventListener('drop', (e) => {
+                e.preventDefault();
+                const itemId = e.dataTransfer.getData('text');
+                const item = items.find(i => i.id === itemId) || 
+                             wetSeason.find(i => i.id === itemId) || 
+                             drySeason.find(i => i.id === itemId);
+                
+                if (item) {
+                    items = items.filter(i => i.id !== itemId);
+                    wetSeason = wetSeason.filter(i => i.id !== itemId);
+                    drySeason = drySeason.filter(i => i.id !== itemId);
+                    
+                    if (season === 'wet') {
+                        wetSeason.push(item);
+                    } else if (season === 'dry') {
+                        drySeason.push(item);
+                    } else {
+                        items.push(item);
+                    }
+                    renderItems();
+                }
+            });
+        }
+
+        function checkAnswers() {
+            const isCorrect = wetSeason.every(item => item.season === 'wet') && 
+                              drySeason.every(item => item.season === 'dry');
+            const feedbackEl = document.getElementById('feedback');
+            const feedbackTextEl = document.getElementById('feedback-text');
+            feedbackEl.classList.remove('hidden');
+            feedbackTextEl.textContent = isCorrect ? 
+                'Great job! You\'ve correctly matched the weather conditions to their seasons.' : 
+                'Some items are misplaced. Try again!';
+        }
+
+        function resetSimulator() {
+            items = [...weatherConditions];
+            wetSeason = [];
+            drySeason = [];
+            renderItems();
+            document.getElementById('feedback').classList.add('hidden');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderItems();
+            setupDropZone('weather-conditions', 'items');
+            setupDropZone('wet-season', 'wet');
+            setupDropZone('dry-season', 'dry');
+            document.getElementById('check-answers').addEventListener('click', checkAnswers);
+            document.getElementById('reset-simulator').addEventListener('click', resetSimulator);
+        });
+    </script>
+</body>
+</html>
